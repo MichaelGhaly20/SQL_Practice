@@ -519,7 +519,7 @@ from temp;
 | 1       | P     | 2020-03-16  |
 | 3       | P     | 2020-03-22  |
 
-Prime subscription rate by product action I
+Prime subscription rate by product action 
 Given the following two tables, return the fraction of users, rounded to two decimal places,
 who accessed Amazon music and upgraded to prime membership within the first 30 days of signing up.
 10 users => 5 access amazon music => 2 purchases membership => 2/5
@@ -535,3 +535,146 @@ on u.user_id = e.user_id and e.type = 'P'
 where u.user_id in (select user_id from events where type = 'Music')
 ```
 
+### Customer retention and customer churn metrics
+
+Customer retention refers to a company's ability to turn customers into repeat buyers
+and prevent them from switching to a competitor.
+It indicates whether your product and the quality of your service please your existing customers
+    reward programs (cc companies)
+    wallet cash back (paytm/gpay)
+    retention period
+
+```
+select * from transactions;
+```
+
+| order_id | cust_id | order_date | amount |
+|----------|---------|------------|--------|
+| 1        | 1       | 2020-01-15 | 150    |
+| 2        | 1       | 2020-02-10 | 150    |
+| 3        | 2       | 2020-01-16 | 150    |
+| 4        | 2       | 2020-02-25 | 150    |
+| 5        | 3       | 2020-01-10 | 150    |
+| 6        | 3       | 2020-02-20 | 150    |
+| 7        | 4       | 2020-01-20 | 150    |
+| 8        | 5       | 2020-02-20 | 150    |
+
+Customer retention
+```
+select extract(month from this_month.order_date) as month_date, count(distinct last_month.cust_id)
+from transactions this_month
+left join transactions last_month
+on
+    this_month.cust_id = last_month.cust_id
+    and (extract(month from this_month.order_date) - extract(month from last_month.order_date)) = 1
+group by
+extract(month from this_month.order_date);
+```
+
+| month_date | count |
+|------------|-------|
+| 1          | 0     |
+| 2          | 3     |
+
+Customer Churn
+```
+select extract(month from last_month.order_date) as month_date, count(distinct last_month.cust_id)
+from transactions last_month
+left join transactions this_month
+on
+    this_month.cust_id = last_month.cust_id
+    and (extract(month from this_month.order_date) - extract(month from last_month.order_date)) = 1
+where this_month.cust_id is null
+group by
+extract(month from last_month.order_date);
+```
+
+| month_date | count |
+|------------|-------|
+| 1          | 1     |
+| 2          | 4     |
+
+
+### Problem10
+
+```
+select * from amazon_users;
+```
+
+| user_id | name   | join_date  |
+|---------|--------|------------|
+| 1       | Jon    | 2020-02-14 |
+| 2       | Jane   | 2020-02-14 |
+| 3       | Jill   | 2020-02-15 |
+| 4       | Josh   | 2020-02-15 |
+| 5       | Jean   | 2020-02-16 |
+| 6       | Justin | 2020-02-17 |
+| 7       | Jeremy | 2020-02-18 |
+
+```
+select * from events;
+```
+
+| user_id | type  | access_date |
+|---------|-------|-------------|
+| 1       | Pay   | 2020-03-01  |
+| 2       | Music | 2020-03-02  |
+| 2       | P     | 2020-03-12  |
+| 3       | Music | 2020-03-15  |
+| 4       | Music | 2020-03-15  |
+| 1       | P     | 2020-03-16  |
+| 3       | P     | 2020-03-22  |
+
+Prime subscription rate by product action
+Given the following two tables, return the fraction of users, rounded to two decimal places,
+who accessed Amazon music and upgraded to prime membership within the first 30 days of signing up.
+10 users => 5 access amazon music => 2 purchases membership => 2/5
+
+```
+select --u.*,e.type, e.access_date, e.access_date - u.join_date
+count(distinct u.user_id) as total_users,
+       count(distinct case when e.access_date - u.join_date < 30 then u.user_id end),
+       1.0*count(distinct case when e.access_date - u.join_date < 30 then u.user_id end) / count(distinct u.user_id)
+from amazon_users u
+Left join events e
+on u.user_id = e.user_id and e.type = 'P'
+where u.user_id in (select user_id from events where type = 'Music')
+```
+
+| total_users | count | ?column?               |
+|-------------|-------|------------------------|
+| 3           | 1     | 0.33333333333333333333 |
+
+
+### Problem11
+
+```
+select * from leetcode_UserActivity;
+```
+
+| username | activity | startdate  | enddate    |
+|----------|----------|------------|------------|
+| Alice    | Travel   | 2020-02-12 | 2020-02-20 |
+| Alice    | Dancing  | 2020-02-21 | 2020-02-23 |
+| Alice    | Travel   | 2020-02-24 | 2020-02-28 |
+| Bob      | Travel   | 2020-02-11 | 2020-02-18 |
+
+Get the Second Most Recent Activity, if there is only one activity then retunr that one
+
+```
+with temp as (
+    select username,
+           activity,
+           endDate,
+           count(1) over (partition by username)                as total_activities,
+           rank() over (partition by username order by endDate) as rn
+    from leetcode_UserActivity
+)
+select * from temp
+where total_activities = 1 or rn = 2;
+```
+
+| username | activity | enddate    | total_activities | rn |
+|----------|----------|------------|------------------|----|
+| Alice    | Dancing  | 2020-02-23 | 3                | 2  |
+| Bob      | Travel   | 2020-02-18 | 1                | 1  |
