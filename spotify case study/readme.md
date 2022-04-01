@@ -26,38 +26,48 @@ insert into spotify_activity values (1,'app-installed','2022-01-01','India')
 select * from spotify_activity;
 ```
 
-/*
+
 Question 1: find total active users each day
 event date total_active_users
+
 2022-01-01 3
+
 2022-01-02 1
+
 2022-01-03 3
+
 2022-01-04 1
- */
+ 
  ```
  select event_date, count(distinct user_id) as total_active_users
 from spotify_activity
 group by event_date
 order by event_date;
 ```
-/*
+
 Question 2: find total active users each week
 week_number total active_users
+
 1            3
+
 2            5
- */
+
  ```
  select extract(week from event_date), count(distinct user_id) as active_users  from spotify_activity
 group by extract(week from event_date);
 ```
-/*
+
  Question 3: date wise total number of users who made the purchase same day they installed the app
 event date no_of_users_same_day_purchase
+
 2022-01-01 0
+
 2022-01-02 0
+
 2022-01-03 2
+
 2022-01-04 1
- */
+ 
  ```
 with t1 as(
     select user_id, event_date,
@@ -70,13 +80,16 @@ group by user_id, event_date
 group by event_date
 order by event_date;
 ```
-/*
+
 Question 4: percentage of paid users in India, USA and any other country should be tagged as others
 country percentage_users
+
 India 40
+
 USA 20
+
 others 40
-*/
+
 ```
 select * from spotify_activity;
 
@@ -93,14 +106,18 @@ total as (
 select country, 100.0*(user_count / total_users) as percent_user
 from t1, total;
 ```
-/*
+
 Question 5: Among all the users who installed the app on a given day, how many did in app purchased on the very next day
 event date cnt_users
+
 2022-01-01 0
+
 2022-01-02 1
+
 2022-01-03 0
+
 2022-01-04 0
-*/
+
 ```
 select * from spotify_activity;
 
