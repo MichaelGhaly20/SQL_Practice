@@ -678,3 +678,45 @@ where total_activities = 1 or rn = 2;
 |----------|----------|------------|------------------|----|
 | Alice    | Dancing  | 2020-02-23 | 3                | 2  |
 | Bob      | Travel   | 2020-02-18 | 1                | 1  |
+
+
+### Problem12
+
+```
+select * from event_status;
+```
+
+| event_time | status |
+|------------|--------|
+| 10:01      | on     |
+| 10:02      | on     |
+| 10:03      | on     |
+| 10:04      | off    |
+| 10:07      | on     |
+| 10:08      | on     |
+| 10:09      | off    |
+| 10:11      | on     |
+| 10:12      | off    |
+
+```
+with t1 as (
+select *,lag(status,1,status) over (order by event_time) as prev_status 
+from event_status
+), 
+t2 as (
+select *, sum(case when status='on' and prev_status='off' then 1 else 0 end) over (order by event_time)  as group_key
+from t1
+)
+select min(event_time) as login_time,
+max(event_time) as logout_time,
+count(*)-1 as cnt
+from t2
+group by group_key
+order by login_time
+```
+
+| login_time | logout_time | cnt |
+|------------|-------------|-----|
+| 10:01      | 10:04       | 3   |
+| 10:07      | 10:09       | 2   |
+| 10:11      | 10:12       | 1   |
