@@ -49,3 +49,48 @@ group by s.date;
 |------------|------------|
 | 2020-01-04 | 0.75       |
 | 2020-01-06 | 0.667      |
+
+
+### Problem2
+
+Assume you have the table below containing information on Facebook user actions. Write a query to obtain the active user retention in July 2022.
+Output the month (in numerical format 1, 2, 3) and the number of monthly active users (MAUs).
+
+Hint: An active user is a user who has user action ("sign-in", "like", or "comment") in the current month and last month.
+
+user_actions table:
+
+| user_id | event_id | event_type | event_date          |
+|---------|----------|------------|---------------------|
+| 445     | 7765     | sign-in    | 05/31/2022 12:00:00 |
+| 742     | 6458     | sign-in    | 06/03/2022 12:00:00 |
+| 445     | 3634     | like       | 06/05/2022 12:00:00 |
+| 742     | 1374     | comment    | 06/05/2022 12:00:00 |
+| 648     | 3124     | like       | 06/18/2022 12:00:00 |
+
+Solution:
+
+```
+with total as(
+SELECT extract(month from event_date) as monthh, user_id
+FROM user_actions
+), final as (
+select t1.monthh, t1.user_id, count(t1.user_id)
+from total t1 join total t2 on t1.user_id = t2.user_id
+--where t1.monthh = 7 and user_id in (select )
+group by t1.monthh, t1.user_id
+order by t1.monthh
+)
+select monthh as month, count(user_id) as monthly_active_users
+from final
+where monthh = 7 and 
+user_id in (select user_id from final where monthh = 6)
+group by month
+order by month;
+```
+Output:
+
+| month | monthly_active_users |
+|-------|----------------------|
+| 7     | 2                    |
+
